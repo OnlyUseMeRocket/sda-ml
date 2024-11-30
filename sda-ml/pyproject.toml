@@ -1,11 +1,14 @@
 [project]
 name = "sda-ml"
 version = "0.1.0"
-description = "Add your description here"
+description = "Jupyter notebook showcasing ELM model inference for restricted IOD problem"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "ipykernel>=6.29.5",
+    "torch>=2.5.1",
+    "torchaudio>=2.5.1",
+    "torchvision>=0.20.1",
 ]
 
 [dependency-groups]
