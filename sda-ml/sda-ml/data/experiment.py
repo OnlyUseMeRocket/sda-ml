@@ -1,4 +1,5 @@
 from data.generator import Restricted_InitialOrbitStatistics
+from data.geo_astro import GD_LLA
 
 INITIAL_ORBIT_PARAMS: Restricted_InitialOrbitStatistics = {
     'SemiMajorAxis': {
@@ -18,3 +19,11 @@ INITIAL_ORBIT_PARAMS: Restricted_InitialOrbitStatistics = {
         'StandardDeviation': 90.
     }
 }
+
+# Altitude in meters
+PURDUE_ARMSTRONG: GD_LLA = {
+        'Latitdue': 40.43157,
+        'Longitude': 273.085549,
+        'Altitude': 192.5
+}
+
