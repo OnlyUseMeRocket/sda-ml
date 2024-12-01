@@ -2,6 +2,11 @@ import torch
 from torch.utils.data import Dataset
 
 class RestrictedIODDataset(Dataset):
+    """Simple dataset class so PyTorch can work with the underlying interfaces needed for 1st party functions
+        Inputs:
+            feature: torch.Tensor - Feature matrix (n,1)
+            labels: torch.Tensor - Label matrix (n,3)
+    """
     def __init__(self, features: torch.Tensor, labels: torch.Tensor) -> None:
         """"""
         super().__init__()
