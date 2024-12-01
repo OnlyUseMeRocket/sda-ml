@@ -1,18 +1,29 @@
-from typing import TypedDict
+from experiment.constants import MU_EARTH_KM
 import numpy as np
 import torch
 from astropy.coordinates import EarthLocation
 from astropy.time import Time
 import astropy.units as unit
 
-class GD_LLA(TypedDict):
-    """Geodedic Latitude [deg], Longitude [deg] and Altitude (either km or m)"""
-    Latitude: float
-    Longitude: float
-    Altitude: float
+def calculate_poincare_elements(orbit_samples: torch.Tensor) -> torch.Tensor:
+    poincare_tensor = torch.Tensor()
+    for row in orbit_samples:    
+        sma = row[0]
+        ecc = row[1]
+        argp = np.deg2rad(row[2])
+        ta = np.deg2rad(row[3])
 
-def calculate_poincare_elements() -> torch.Tensor:
-    ...
+        # Poincare Elements
+        L = np.sqrt(MU_EARTH_KM * sma)
+        I = np.rad2deg(argp + ta)
+        g = np.sqrt(2 * L * (1 - np.sqrt(1 - (ecc ** 2)))) * np.cos(argp)
+
+        # Append to Larger Tensor
+        tensor_row = torch.Tensor([L, I, g])
+        poincare_tensor = torch.cat((poincare_tensor, tensor_row.unsqueeze(0)), dim=0)
+        
+    return poincare_tensor
+
 
 def observer_gd_lla_to_ecef(GD_LAT: float, GD_LONG: float, alt: float) -> EarthLocation:
     """Calculate topocentric position vector of observer in ECEF frame calculations done
@@ -93,7 +104,8 @@ def kepler_to_cartesian_restricted(orbit_samples: torch.Tensor) -> torch.Tensor:
         r_cartesian = torch.matmul(torch.matmul(torch.matmul(r3_raan, r1_inc), r3_argp), r_perifocal).reshape(1,3)
 
         obj_cart = torch.cat((obj_cart, r_cartesian.unsqueeze(0)), dim=0)
-
+        
+    obj_cart = obj_cart.reshape(obj_cart.shape[0], 3)
     return obj_cart
 
 

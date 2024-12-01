@@ -1,41 +1,18 @@
-from typing import TypedDict
-from torch.utils.data import Dataset
+from data.dataclass import Restricted_InitialOrbitStatistics
 import torch
-from data.experiment import PURDUE_ARMSTRONG
-from data.geo_astro import observer_ecef_to_eci, observer_gd_lla_to_ecef, kepler_to_cartesian_restricted
+import numpy as np
+from experiment.constants import PURDUE_ARMSTRONG
+from data.geo_astro import (
+    observer_ecef_to_eci, 
+    observer_gd_lla_to_ecef, 
+    kepler_to_cartesian_restricted,
+    calculate_poincare_elements
+)
+from ml.data import RestrictedIODDataset
 from astropy.time import Time
 
-class StatSummary(TypedDict):
-    """First moment of given parameter (Mean, Standard Deviation)"""
-    Mean: float
-    StandardDeviation: float
 
-class Restricted_InitialOrbitStatistics(TypedDict):
-    """Initial orbital parameter statistics for restricted orbits
-    Inputs:
-        SemiMajorAxis: Semi-Major Axis of Restricted Orbit [km or m]
-        Eccentricity: Eccentricity of Restricted Orbit [NO DIM]
-        ArgPeriapsis: Argument of Periapsis [deg]
-        MeanAnomaly: Mean Anomaly [deg]
-
-    NOTE: General reminder to always consider units when switching between m and km
-    (I'm looking at you graviatational constant !!!!!)
-    """
-    SemiMajorAxis: StatSummary
-    Eccentricity: StatSummary
-    ArgPeriapsis: StatSummary
-    MeanAnomaly: StatSummary
-
-class RestrictedIODDataset(Dataset):
-    def __init__(self) -> None:
-        ...
-    def __len__(self) -> int:
-        ...
-    
-    def __getitem__(self, index: int) -> tuple[float, tuple[float, ...]]:
-        ...
-
-def generate_initial_orbit_dataset_restricted(initial_orbit_stats: Restricted_InitialOrbitStatistics, n_samples: int):
+def generate_initial_orbit_dataset_restricted(initial_orbit_stats: Restricted_InitialOrbitStatistics, n_samples: int) -> RestrictedIODDataset:
     
     # Define Data Mean and Covariance
     data_mean = torch.tensor([initial_orbit_stats['SemiMajorAxis']['Mean'],
@@ -66,27 +43,24 @@ def generate_initial_orbit_dataset_restricted(initial_orbit_stats: Restricted_In
                                        PURDUE_ARMSTRONG['Altitude'])
     
     obs_j2k = observer_ecef_to_eci(obs_ecef, Time.now())
+
+    # Generate Object Coordinates and Poincar Elements
     obj_j2k = kepler_to_cartesian_restricted(initial_orbit_samples)
+    poincare = calculate_poincare_elements(initial_orbit_samples)
+
+    # Generate Geocentric Right Ascension
+    right_ascension: list[float] = []
+    geocentric_range = obj_j2k - obs_j2k
+    for row in geocentric_range:
+        x = row[0]
+        y = row[1]
+        ra = np.atan2(y, x)
+        right_ascension.append(np.rad2deg(ra))
+    
+    ra_tensor = torch.tensor(right_ascension)
+    ra_tensor = ra_tensor.reshape(-1, 1)
+    IOD_Dataset = RestrictedIODDataset(ra_tensor, poincare)
+
+    return IOD_Dataset
 
 
-    return (obs_j2k, obj_j2k)
-
-
-INITIAL_ORBIT_PARAMS: Restricted_InitialOrbitStatistics = {
-    'SemiMajorAxis': {
-        'Mean': 42164.,
-        'StandardDeviation': 100.
-    },
-    'ArgPeriapsis': {
-        'Mean': 0.,
-        'StandardDeviation': 90.
-    },
-    'Eccentricity': {
-        'Mean': 0.015,
-        'StandardDeviation': 0.001
-    },
-    'MeanAnomaly': {
-        'Mean': 0.,
-        'StandardDeviation': 90.
-    }
-}
