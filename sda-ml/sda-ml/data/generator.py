@@ -1,6 +1,9 @@
 from typing import TypedDict
 from torch.utils.data import Dataset
 import torch
+from data.experiment import PURDUE_ARMSTRONG
+from data.geo_astro import observer_ecef_to_eci, observer_gd_lla_to_ecef, kepler_to_cartesian_restricted
+from astropy.time import Time
 
 class StatSummary(TypedDict):
     """First moment of given parameter (Mean, Standard Deviation)"""
@@ -32,7 +35,7 @@ class RestrictedIODDataset(Dataset):
     def __getitem__(self, index: int) -> tuple[float, tuple[float, ...]]:
         ...
 
-def generate_initial_orbit_samples_restricted(initial_orbit_stats: Restricted_InitialOrbitStatistics, n_samples: int):
+def generate_initial_orbit_dataset_restricted(initial_orbit_stats: Restricted_InitialOrbitStatistics, n_samples: int):
     
     # Define Data Mean and Covariance
     data_mean = torch.tensor([initial_orbit_stats['SemiMajorAxis']['Mean'],
@@ -52,10 +55,38 @@ def generate_initial_orbit_samples_restricted(initial_orbit_stats: Restricted_In
     print(data_mean)
     print(data_cov_matrix)
     distribution = torch.distributions.multivariate_normal.MultivariateNormal(data_mean, data_cov_matrix)
-
+    
     # The tuple is shaped that way as the input is a torch.Size, which is a tuple of (row, col)
+    # Variables: [SMA, Eccentricity, ArgPeriapsis, MeanAnomaly]
     initial_orbit_samples = distribution.sample((n_samples, ))
 
-    return initial_orbit_samples
+    # Generate Observer Coordinates
+    obs_ecef = observer_gd_lla_to_ecef(PURDUE_ARMSTRONG['Latitude'],
+                                       PURDUE_ARMSTRONG['Longitude'],
+                                       PURDUE_ARMSTRONG['Altitude'])
+    
+    obs_j2k = observer_ecef_to_eci(obs_ecef, Time.now())
+    obj_j2k = kepler_to_cartesian_restricted(initial_orbit_samples)
 
 
+    return (obs_j2k, obj_j2k)
+
+
+INITIAL_ORBIT_PARAMS: Restricted_InitialOrbitStatistics = {
+    'SemiMajorAxis': {
+        'Mean': 42164.,
+        'StandardDeviation': 100.
+    },
+    'ArgPeriapsis': {
+        'Mean': 0.,
+        'StandardDeviation': 90.
+    },
+    'Eccentricity': {
+        'Mean': 0.015,
+        'StandardDeviation': 0.001
+    },
+    'MeanAnomaly': {
+        'Mean': 0.,
+        'StandardDeviation': 90.
+    }
+}

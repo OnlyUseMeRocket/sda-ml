@@ -5,7 +5,9 @@ description = "Jupyter notebook showcasing ELM model inference for restricted IO
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
+    "astropy>=7.0.0",
     "ipykernel>=6.29.5",
+    "skyfield>=1.49",
     "torch>=2.5.1",
     "torchaudio>=2.5.1",
     "torchvision>=0.20.1",
