@@ -3,6 +3,9 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+# Image Ignores
+**/*.png
+**/*.pth
 
 # MacOS Ignores
 **/.DS_Store

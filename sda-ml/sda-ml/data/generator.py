@@ -29,8 +29,6 @@ def generate_initial_orbit_dataset_restricted(initial_orbit_stats: Restricted_In
     data_cov_matrix = torch.diag(data_variance)
 
     # Generate Samples
-    print(data_mean)
-    print(data_cov_matrix)
     distribution = torch.distributions.multivariate_normal.MultivariateNormal(data_mean, data_cov_matrix)
     
     # The tuple is shaped that way as the input is a torch.Size, which is a tuple of (row, col)
