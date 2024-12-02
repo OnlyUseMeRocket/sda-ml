@@ -27,10 +27,6 @@ $ uv sync
 
 > Note: *In Mac or Linux, use the following command (make sure you are in the nested sda-ml folder)*
 ```bash
-$ pwd
-...
-../sda-ml/sda-ml
-...
 $ code .
 ```
 
